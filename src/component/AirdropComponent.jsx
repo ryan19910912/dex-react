@@ -91,6 +91,8 @@ export default function AirdropComponent() {
     return Y + M + D + h + m + s;
   }
 
+  const decimal = 1000000000000000000;
+
   return (
     <div style={{ textAlign: "center" }}>
 
@@ -109,7 +111,7 @@ export default function AirdropComponent() {
               <Td style={{ width: '50%', padding: '10px' }}>
                 {
                   airdropTotalAmount
-                    ? parseInt(JSON.parse(JSON.stringify(airdropTotalAmount)).hex, 16)
+                    ? parseInt(JSON.parse(JSON.stringify(airdropTotalAmount)).hex, 16) / decimal
                     : "Loading ..."
                 }
               </Td>
@@ -164,7 +166,7 @@ export default function AirdropComponent() {
               <Td style={{ color: '#7dd3fc' }}>Get AirDrop Count</Td>
               {
                 airdropRecord ?
-                  <Td style={{ width: '50%', padding: '10px' }}>{parseInt(JSON.parse(JSON.stringify(airdropRecord)).hex, 16)}</Td>
+                  <Td style={{ width: '50%', padding: '10px' }}>{parseInt(JSON.parse(JSON.stringify(airdropRecord)).hex, 16) / decimal}</Td>
                   :
                   <Td style={{ width: '50%', padding: '10px' }}> Loading ... </Td>
               }
