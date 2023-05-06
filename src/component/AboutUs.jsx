@@ -15,6 +15,7 @@ export default function SwapComponent() {
         <h3 style={{color : "aqua"}}>We implement&nbsp;
             <text style={{color: "gold"}}>Wallet</text>、
             <text style={{color: "gold"}}>Swap</text>、
+            <text style={{color: "gold"}}>Pool</text>、
             <text style={{color: "gold"}}>Staking</text>
             &nbsp;and&nbsp;
             <text style={{color: "gold"}}>Airdrop</text>.</h3>
