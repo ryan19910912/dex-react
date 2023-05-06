@@ -271,13 +271,13 @@ export default function StakingComponent() {
                   }}
                   onSuccess={() => {
                     MySwal.fire({
-                      title: `Arrpove ${tokenName} Success！`,
+                      title: `Approve ${tokenName} Success！`,
                       icon: 'success'
                     })
                   }}
                   onError={() => {
                     MySwal.fire({
-                      title: `Arrpove ${tokenName} Fail！`,
+                      title: `Approve ${tokenName} Fail！`,
                       icon: 'error'
                     })
                   }}

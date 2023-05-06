@@ -23,7 +23,7 @@ export default function SwapComponent() {
         <br/>
 
         <h3>Our team members：</h3>
-        <h3>Bonnie、許家豪(Ryan)、錢昱名(企鵝)、鄭佳毓、陳信仲(Garrick)、羅旭辰(Jakervin)、Emma</h3>
+        <h3>Bonnie、許家豪(Ryan)、錢昱名(企鵝)、鄭佳毓、陳信仲(Garrick)</h3>
     </div>
   );
 }

@@ -313,13 +313,13 @@ export default function PoolComponent() {
                   }}
                   onSuccess={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token0Name} Success！`,
+                      title: `Approve ${token0Name} Success！`,
                       icon: 'success'
                     })
                   }}
                   onError={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token0Name} Fail！`,
+                      title: `Approve ${token0Name} Fail！`,
                       icon: 'error'
                     })
                   }}
@@ -335,13 +335,13 @@ export default function PoolComponent() {
                   }}
                   onSuccess={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token1Name} Success！`,
+                      title: `Approve ${token1Name} Success！`,
                       icon: 'success'
                     })
                   }}
                   onError={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token1Name} Fail！`,
+                      title: `Approve ${token1Name} Fail！`,
                       icon: 'error'
                     })
                   }}
@@ -358,13 +358,13 @@ export default function PoolComponent() {
                   }}
                   onSuccess={() => {
                     MySwal.fire({
-                      title: 'Swap Token Success！',
+                      title: 'Add Token Success！',
                       icon: 'success'
                     })
                   }}
                   onError={() => {
                     MySwal.fire({
-                      title: 'Swap Token Fail！',
+                      title: 'Add Token Fail！',
                       icon: 'error'
                     })
                   }}

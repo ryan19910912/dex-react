@@ -302,13 +302,13 @@ export default function SwapComponent() {
                   }}
                   onSuccess={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token0Name} Success！`,
+                      title: `Approve ${token0Name} Success！`,
                       icon: 'success'
                     })
                   }}
                   onError={() => {
                     MySwal.fire({
-                      title: `Arrpove ${token0Name} Fail！`,
+                      title: `Approve ${token0Name} Fail！`,
                       icon: 'error'
                     })
                   }}
