@@ -7,7 +7,9 @@ import {
   useBalance,
 } from "@thirdweb-dev/react";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+import axios from "axios";
 
 import { NATIVE_TOKEN_ADDRESS } from "@thirdweb-dev/sdk";
 
@@ -21,7 +23,7 @@ import {
   Td,
   TableCaption,
   TableContainer,
-} from '@chakra-ui/react'
+} from '@chakra-ui/react';
 
 export default function WalletComponent() {
 
@@ -30,12 +32,13 @@ export default function WalletComponent() {
   }
 
   const AddressTableStyle = {
-    backgroundColor: '#1d2237',
+    backgroundColor: '#111524',
     border: '1px solid rgba(255, 255, 255, 0.05)',
     padding: '20px',
     borderRadius: '18px',
-    width: '100vh',
-    marginBottom: '15px',
+    width: '10vw',
+    margin: '15px',
+    display: 'inline-table',
   }
 
   const BalanceTableStyle = {
@@ -43,12 +46,42 @@ export default function WalletComponent() {
     border: '1px solid rgba(255, 255, 255, 0.05)',
     padding: '20px',
     borderRadius: '18px',
-    width: '100vh',
+    width: '60vw',
+    margin: '15px',
+    display: 'inline-table',
   }
 
   const AddressThStyle = {
     fontSize: '24px',
     color: 'gold',
+  }
+
+  const ThStyle = {
+    fontSize: '24px',
+    color: 'gold',
+    cursor: 'pointer',
+  }
+
+  const pointStyle = {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    width: '10vw',
+    display: 'inline-block',
+  }
+
+  function timestampChange(timestamp) {
+    if (timestamp == 0) {
+      return "N/A";
+    }
+    var date = new Date(timestamp);
+    var Y = date.getFullYear() + '-';
+    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+    var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
+    var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+    var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':';
+    var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
+    return Y + M + D + h + m + s;
   }
 
   const balanceArr = [];
@@ -75,6 +108,53 @@ export default function WalletComponent() {
     }
   })
 
+  const [transactionArr, setTransactionArr] = useState([]);
+
+  const getTransaction = () => {
+
+    const ETHERSCAN_API_KEY = import.meta.env.VITE_ETHERSCAN_API_KEY
+
+    const paramsObj = {
+      'module': 'account',
+      'action': 'txlist',
+      'startblock': 0,
+      'endblock': 'latest',
+      'address': address,
+      'page': 1,
+      'offset': 10,
+      'sort': 'desc',
+      'apikey': ETHERSCAN_API_KEY
+    }
+
+    const res = axios.get('https://api-sepolia.etherscan.io/api', { params: paramsObj });
+
+    res.then((response) => {
+      const responseData = response.data;
+      let transactionArray = [];
+      if (responseData.status === '1') {
+        responseData.result.forEach((vo) => {
+          let transObj = new Object();
+          transObj.blockNumber = vo.blockNumber;
+          transObj.date = timestampChange(vo.timeStamp * 1000);
+          transObj.functionName = (vo.functionName).split('(')[0];
+          transObj.gas = vo.gas;
+          transObj.from = vo.from;
+          transObj.to = vo.to;
+
+          transactionArray.push(transObj);
+        });
+        setTransactionArr(transactionArray);
+      }
+    })
+
+  }
+
+  useEffect(() => {
+    getTransaction();
+  })
+
+  // getTransaction();
+
   return (
     <div className="wallet" style={walletStyle}>
       <h1>Wallet Detail</h1>
@@ -89,37 +169,98 @@ export default function WalletComponent() {
             <Table variant='simple' align="center" style={AddressTableStyle}>
               <Thead>
                 <Tr>
-                  <Th style={AddressThStyle}>Address <hr/> </Th>
+                  <Th colSpan={2} style={ThStyle} >
+                    Address
+                    <br />
+                    <a style={{ fontSize: '16px' }} href={'https://sepolia.etherscan.io/address/' + address} target="_blank">{address}</a>
+                    <hr />
+                  </Th>
                 </Tr>
               </Thead>
               <Tbody>
+                {/* Balance */}
                 <Tr>
                   <Td>
-                    <a href={'https://sepolia.etherscan.io/address/'+address} target="_blank">{address}</a>
+                    <text>Token Name</text>
+                  </Td>
+                  <Td>
+                    <text>Balance</text>
                   </Td>
                 </Tr>
-              </Tbody>
-            </Table>
-            <Table variant='simple' align="center" style={BalanceTableStyle}>
-              <Thead>
-                <Tr>
-                  <Th colSpan={2} style={AddressThStyle}>Balance <hr/> </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
                 {
                   balanceArr.length == 0 ?
                     <Tr>
-                      <Td style={{ color: 'gray' }}>No Balance</Td>
+                      <Td colSpan={2} style={{ color: 'gray' }}>No Balance</Td>
                     </Tr>
                     :
                     balanceArr.map((obj) => {
                       return (
                         <Tr>
                           <Td style={{ width: '50%', padding: '10px' }}>
-                            <a href={'https://sepolia.etherscan.io/token/'+obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
+                            <a href={'https://sepolia.etherscan.io/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
                           </Td>
-                          <Td style={{ color: 'rgb(23, 198, 135)', padding: '10px' }}>{'$'+obj?.value}</Td>
+                          <Td style={{ color: 'aquamarine', padding: '10px' }}>{'$' + obj?.value}</Td>
+                        </Tr>
+                      )
+                    })
+                }
+              </Tbody>
+            </Table>
+            <Table variant='simple' align="center" style={BalanceTableStyle}>
+              <Thead>
+                <Tr>
+                  <Th colSpan={6} style={ThStyle} >Transcation History ( Top 10 )<br /><br /> <hr /> </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {/* Transcation History */}
+                <Tr>
+                  <Td>
+                    <text>Block Number</text>
+                  </Td>
+                  <Td>
+                    <text>Date</text>
+                  </Td>
+                  <Td>
+                    <text>Function Name</text>
+                  </Td>
+                  <Td>
+                    <text>Gas</text>
+                  </Td>
+                  <Td>
+                    <text>From</text>
+                  </Td>
+                  <Td>
+                    <text>To</text>
+                  </Td>
+                </Tr>
+                {
+                  transactionArr.length == 0 ?
+                    <Tr>
+                      <Td colSpan={6} style={{ color: 'gray' }}>No Transaction History</Td>
+                    </Tr>
+                    :
+                    transactionArr.map((obj) => {
+                      return (
+                        <Tr>
+                          <Td>
+                            <a href={'https://sepolia.etherscan.io/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
+                          </Td>
+                          <Td style={{ color: 'yellow' }}>
+                            {obj?.date}
+                          </Td>
+                          <Td style={{ color: 'orange' }}>
+                            {obj?.functionName}
+                          </Td>
+                          <Td style={{ color: 'aquamarine' }}>
+                            {obj?.gas}
+                          </Td>
+                          <Td>
+                            <a style={pointStyle} href={'https://sepolia.etherscan.io/address/' + obj?.from} target="_blank">{obj?.from}</a>
+                          </Td>
+                          <Td>
+                            <a style={pointStyle} href={'https://sepolia.etherscan.io/address/' + obj?.to} target="_blank">{obj?.to}</a>
+                          </Td>
                         </Tr>
                       )
                     })
@@ -127,6 +268,7 @@ export default function WalletComponent() {
               </Tbody>
             </Table>
           </TableContainer>
+
       }
     </div>
   );

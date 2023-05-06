@@ -186,23 +186,6 @@ export default function PoolComponent() {
     setToken1Amount(0);
   }
 
-  function hexToDec(hex) {
-    var decimal = 0;
-    for (var i = 0; i < hex.length; i++) {
-      var digit = hex[i];
-      if (digit >= '0' && digit <= '9') {
-        decimal = decimal * 16 + parseInt(digit);
-      } else if (digit >= 'A' && digit <= 'F') {
-        decimal = decimal * 16 + digit.charCodeAt(0) - 55;
-      } else if (digit >= 'a' && digit <= 'f') {
-        decimal = decimal * 16 + digit.charCodeAt(0) - 87;
-      } else {
-        return NaN; // 非法的十六進制數字
-      }
-    }
-    return decimal;
-  }
-
   const token0AmountFn = (e) => {
 
     setToken0Amount(e.target.value);
