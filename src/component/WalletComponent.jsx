@@ -5,6 +5,7 @@ import {
   useContract,
   useContractRead,
   useBalance,
+  useChainId,
   useActiveChain
 } from "@thirdweb-dev/react";
 
@@ -29,6 +30,28 @@ import {
 } from '@chakra-ui/react';
 
 export default function WalletComponent() {
+
+  const chain = useActiveChain();
+
+  const [apiurl, setApiurl] = useState('https://api-sepolia.etherscan.io/api');
+  const [chainUrl, setChainUrl] = useState('https://sepolia.etherscan.io');
+
+  useEffect(() => {
+    if (chain){
+      const chainName = chain.name;
+      console.log(chainName);
+      if (chainName == 'Sepolia'){
+        setApiurl('https://api-sepolia.etherscan.io/api');
+        setChainUrl('https://sepolia.etherscan.io');
+      } else if (chainName == 'Ethereum Mainnet'){
+        setApiurl('https://api.etherscan.io/api');
+        setChainUrl('https://etherscan.io');
+      } else if (chainName == 'Goerli'){
+        setApiurl('https://api-goerli.etherscan.io/api');
+        setChainUrl('https://goerli.etherscan.io');
+      }
+    }
+  }, [chain])
 
   const walletStyle = {
     textAlign: 'center'
@@ -128,11 +151,7 @@ export default function WalletComponent() {
       'apikey': ETHERSCAN_API_KEY
     }
 
-    const chain = useActiveChain();
-
-    console.log("chain = "+chain);
-
-    const res = axios.get('https://api-sepolia.etherscan.io/api', { params: paramsObj });
+    const res = axios.get(apiurl, { params: paramsObj });
 
     res.then((response) => {
       const responseData = response.data;
@@ -176,7 +195,7 @@ export default function WalletComponent() {
                   <Th colSpan={2} style={ThStyle} >
                     Address
                     <br />
-                    <a style={{ fontSize: '16px' }} href={'https://sepolia.etherscan.io/address/' + address} target="_blank">{address}</a>
+                    <a style={{ fontSize: '16px' }} href={chainUrl+'/address/' + address} target="_blank">{address}</a>
                     <hr />
                   </Th>
                 </Tr>
@@ -201,7 +220,7 @@ export default function WalletComponent() {
                       return (
                         <Tr>
                           <Td style={{ width: '50%', padding: '10px' }}>
-                            <a href={'https://sepolia.etherscan.io/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
+                            <a href={chainUrl+'/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
                           </Td>
                           <Td style={{ color: 'aquamarine', padding: '10px' }}>{obj?.value}</Td>
                         </Tr>
@@ -248,7 +267,7 @@ export default function WalletComponent() {
                       return (
                         <Tr>
                           <Td>
-                            <a href={'https://sepolia.etherscan.io/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
+                            <a href={chainUrl+'/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
                           </Td>
                           <Td style={{ color: 'yellow' }}>
                             {obj?.date}
@@ -260,10 +279,10 @@ export default function WalletComponent() {
                             {obj?.gas}
                           </Td>
                           <Td>
-                            <a style={pointStyle} href={'https://sepolia.etherscan.io/address/' + obj?.from} target="_blank">{obj?.from}</a>
+                            <a style={pointStyle} href={chainUrl+'/address/' + obj?.from} target="_blank">{obj?.from}</a>
                           </Td>
                           <Td>
-                            <a style={pointStyle} href={'https://sepolia.etherscan.io/address/' + obj?.to} target="_blank">{obj?.to}</a>
+                            <a style={pointStyle} href={chainUrl+'/address/' + obj?.to} target="_blank">{obj?.to}</a>
                           </Td>
                         </Tr>
                       )
