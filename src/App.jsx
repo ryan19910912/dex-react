@@ -1,6 +1,6 @@
 import "./styles/Home.css";
 import React from 'react';
-import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from 'react-router-dom';
+import { Route, createBrowserRouter, createRoutesFromElements, RouterProvider, createHashRouter } from 'react-router-dom';
 import AboutUs from './component/AboutUs';
 import WalletComponent from './component/WalletComponent';
 import AirdropComponent from './component/AirdropComponent';
