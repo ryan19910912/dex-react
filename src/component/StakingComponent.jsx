@@ -26,9 +26,8 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 export default function StakingComponent() {
-  const MySwal = withReactContent(Swal);
 
-  const walletAddress = useAddress();
+  const MySwal = withReactContent(Swal);
 
   const pairsTableStyle = {
     backgroundColor: '#1d2237',
@@ -83,14 +82,15 @@ export default function StakingComponent() {
     minWidth: '150px',
     minHeight: '43px',
     margin: '2vh',
-    background: 'hsl(256, 6.0%, 93.2%)',
+    background: 'rgb(237, 237, 239)',
     color: 'black',
     padding: '12px',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: '500',
     boxSizing: 'border-box',
     cursor: 'pointer',
+    lineHeight: 1,
   }
 
   const btnStyledisabled = {
@@ -101,9 +101,10 @@ export default function StakingComponent() {
     color: 'black',
     padding: '12px',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: '500',
     boxSizing: 'border-box',
+    lineHeight: 1,
   }
 
   const pairsBtnStyle = {
@@ -117,12 +118,15 @@ export default function StakingComponent() {
     cursor: 'pointer',
   }
 
+  const walletAddress = useAddress();
+
   const decimal = 1000000000000000000;
 
   const [stakingAddress, setStakingAddress] = useState(STAKING1);
 
   const [tokenAddress, setTokenAddress] = useState(TOKEN1);
   const [tokenName, setTokenName] = useState("T1");
+  const [tokenAllowance, setTokenAllowance] = useState(0);
 
   const [inputAmount, setInputAmount] = useState(0);
 
@@ -134,6 +138,19 @@ export default function StakingComponent() {
 
   const { contract: tokencontract } = useContract(tokenAddress);
   const { contract: stakingcontract } = useContract(stakingAddress);
+
+  const {
+    data: allowance,
+    isLoading: isAllowanceLoadong,
+    error: allowanceError
+  } = useContractRead(tokencontract, 'allowance', [walletAddress, stakingAddress]);
+
+  useEffect(() => {
+    setTokenAllowance(0);
+    if (!isAllowanceLoadong) {
+      setTokenAllowance(parseFloat(parseInt(JSON.parse(JSON.stringify(allowance)).hex, 16) / decimal).toFixed(4));
+    }
+  }, [allowance])
 
   // 取得質押總數
   const {
@@ -253,101 +270,138 @@ export default function StakingComponent() {
               <Td style={{ padding: '10px', textAlign: 'left' }}>
                 <b><text style={{ color: '#7dd3fc' }}>Token : </text></b><text>{tokenName}</text>
                 <br></br>
-                <b>Total Supply : {totalSupply}</b>
+                <text style={{ fontSize: '14px' }}>Total Supply : <text style={{ color: 'chartreuse' }}>{totalSupply}</text></text>
+                <br></br>
+                <text style={{ fontSize: '14px' }}>Staking Balance : <text style={{ color: 'chartreuse' }}>{stakingBalance}</text></text>
               </Td>
               <Td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>
                 <text>Add Amount : </text><input style={{ height: '35px' }} type="number" value={inputAmount} onChange={inputAmountFn}></input>
-                <br></br>
-                <b>Staking Balance : {stakingBalance}</b>
+                <br />
+                {
+                  inputAmount <= 0 ? <text style={{ color: 'red', fontSize: '10px' }}><b>{tokenName} Amount must be greater than 0</b></text> : ""
+                }
               </Td>
             </Tr>
             <Tr style={tab === 'Deposit' ? dblock : dnone}>
-              <Td colSpan={3} style={{paddingTop: '20px'}}>
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={tokenAddress} // Your smart contract address
-                  action={async (contract) => {
-                    await contract.call("approve", [stakingAddress, (inputAmount * decimal).toString()]);
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: `Approve ${tokenName} Success！`,
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: `Approve ${tokenName} Fail！`,
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Approve {tokenName}
-                </Web3Button>
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={stakingAddress} // Your smart contract address
-                  action={async (contract) => {
-                    await contract.call('stake', [(inputAmount * decimal).toString()]);
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: `Staking ${tokenName} Success！`,
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: `Staking ${tokenName} Fail！`,
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Staking Confirm
-                </Web3Button>
+              <Td colSpan={3} style={{ paddingTop: '20px' }}>
+                <text style={{ display: 'inline-table' }}>
+                  {
+                    inputAmount > 0 ?
+                      <Web3Button
+                        style={btnStyle}
+                        contractAddress={tokenAddress} // Your smart contract address
+                        action={async (contract) => {
+                          await contract.call("approve", [stakingAddress, (inputAmount * decimal).toString()]);
+                        }}
+                        onSuccess={() => {
+                          MySwal.fire({
+                            title: `Approve ${tokenName} Success！`,
+                            icon: 'success'
+                          })
+                        }}
+                        onError={() => {
+                          MySwal.fire({
+                            title: `Approve ${tokenName} Fail！`,
+                            icon: 'error'
+                          })
+                        }}
+                      >
+                        Approve {tokenName}
+                      </Web3Button>
+                      :
+                      <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Approve {tokenName}</button>
+                  }
+                  <br></br>
+                  <text>Allowance : <text style={{ color: 'chartreuse' }}>{tokenAllowance}</text></text>
+                </text>
+                <text>
+                  {
+                    (Number(tokenAllowance) >= Number(inputAmount) && inputAmount > 0) ?
+                      <Web3Button
+                        style={btnStyle}
+                        contractAddress={stakingAddress} // Your smart contract address
+                        action={async (contract) => {
+                          await contract.call('stake', [(inputAmount * decimal).toString()]);
+                        }}
+                        onSuccess={() => {
+                          MySwal.fire({
+                            title: `Staking ${tokenName} Success！`,
+                            icon: 'success'
+                          })
+                        }}
+                        onError={() => {
+                          MySwal.fire({
+                            title: `Staking ${tokenName} Fail！`,
+                            icon: 'error'
+                          })
+                        }}
+                      >
+                        Staking Confirm
+                      </Web3Button>
+                      :
+                      <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Staking Confirm</button>
+                  }
+
+                </text>
               </Td>
             </Tr>
 
             {/* Withdraw */}
             <Tr style={tab === 'Withdraw' ? dblock : dnone}>
               <Td style={{ padding: '10px', textAlign: 'left' }}>
-                <b><text style={{ color: '#7dd3fc' }}>Staking Balance : </text></b>
+                <b><text style={{ color: '#7dd3fc' }}>Staking {tokenName} Balance : </text></b>
               </Td>
               <Td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>
                 <text>{stakingBalance}</text>
               </Td>
             </Tr>
-            <Tr style={tab === 'Withdraw' ? dblock : dnone}>
-              <Td style={{ padding: '10px', textAlign: 'left' }}>
-                <b><text style={{ color: '#7dd3fc' }}>Remove Amount : </text></b>
-              </Td>
-              <Td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>
-                <input style={{ height: '35px' }} type="number" value={inputAmount} onChange={inputAmountFn}></input>
-              </Td>
-            </Tr>
+            {
+              Number(stakingBalance) > 0 ?
+                <Tr style={tab === 'Withdraw' ? dblock : dnone}>
+                  <Td style={{ padding: '10px', textAlign: 'left' }}>
+                    <b><text style={{ color: '#7dd3fc' }}>Remove {tokenName} Amount : </text></b>
+                  </Td>
+                  <Td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>
+                    <input style={{ height: '35px' }} type="number" value={inputAmount} onChange={inputAmountFn}></input>
+                    <br />
+                    {
+                      inputAmount <= 0 ? <text style={{ color: 'red', fontSize: '10px' }}><b>{tokenName} Amount must be greater than 0</b></text> : ""
+                    }
+                  </Td>
+                </Tr>
+                :
+                ""
+            }
             <Tr style={tab === 'Withdraw' ? dblock : dnone}>
               <Td colSpan={3}>
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={stakingAddress} // Your smart contract address
-                  action={async (contract) => {
-                    await contract.call('withdraw', [(inputAmount * decimal).toString()]);
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: `Withdraw ${tokenName} Success！`,
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: `Withdraw ${tokenName} Fail！`,
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Withdraw Confirm
-                </Web3Button>
+                {
+                  (Number(stakingBalance) > 0 && Number(stakingBalance) >= Number(inputAmount) && inputAmount > 0)
+                    ?
+                    <Web3Button
+                      style={btnStyle}
+                      contractAddress={stakingAddress} // Your smart contract address
+                      action={async (contract) => {
+                        await contract.call('withdraw', [(inputAmount * decimal).toString()]);
+                      }}
+                      onSuccess={() => {
+                        MySwal.fire({
+                          title: `Withdraw ${tokenName} Success！`,
+                          icon: 'success'
+                        })
+                      }}
+                      onError={() => {
+                        MySwal.fire({
+                          title: `Withdraw ${tokenName} Fail！`,
+                          icon: 'error'
+                        })
+                      }}
+                    >
+                      Withdraw Confirm
+                    </Web3Button>
+                    :
+                    <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Withdraw Confirm</button>
+                }
+
               </Td>
             </Tr>
 
@@ -362,27 +416,32 @@ export default function StakingComponent() {
             </Tr>
             <Tr style={tab === 'Reward' ? dblock : dnone}>
               <Td colSpan={3}>
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={stakingAddress} // Your smart contract address
-                  action={async (contract) => {
-                    await contract.call('getReward');
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: 'Get Reward Success！',
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: 'Get Reward Fail！',
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Get Reward Confirm
-                </Web3Button>
+                {
+                  Number(rewardAmount) > 0 ?
+                    <Web3Button
+                      style={btnStyle}
+                      contractAddress={stakingAddress} // Your smart contract address
+                      action={async (contract) => {
+                        await contract.call('getReward');
+                      }}
+                      onSuccess={() => {
+                        MySwal.fire({
+                          title: 'Get Reward Success！',
+                          icon: 'success'
+                        })
+                      }}
+                      onError={() => {
+                        MySwal.fire({
+                          title: 'Get Reward Fail！',
+                          icon: 'error'
+                        })
+                      }}
+                    >
+                      Get Reward Confirm
+                    </Web3Button>
+                    :
+                    <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Get Reward Confirm</button>
+                }
               </Td>
             </Tr>
 

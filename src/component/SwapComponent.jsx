@@ -65,14 +65,15 @@ export default function SwapComponent() {
     minWidth: '150px',
     minHeight: '43px',
     margin: '2vh',
-    background: 'hsl(256, 6.0%, 93.2%)',
+    background: 'rgb(237, 237, 239)',
     color: 'black',
     padding: '12px',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: '500',
     boxSizing: 'border-box',
     cursor: 'pointer',
+    lineHeight: 1,
   }
 
   const btnStyledisabled = {
@@ -83,9 +84,10 @@ export default function SwapComponent() {
     color: 'black',
     padding: '12px',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: '500',
     boxSizing: 'border-box',
+    lineHeight: 1,
   }
 
   const pairsBtnStyle = {
@@ -99,17 +101,26 @@ export default function SwapComponent() {
     cursor: 'pointer',
   }
 
+  const walletAddress = useAddress();
+
   const decimal = 1000000000000000000;
 
   const [ammAddress, setAmmAddress] = useState(AMM1);
+
   const [token0Address, setToken0Address] = useState(AIRDROP_TOKEN);
   const [token0Name, setToken0Name] = useState("AIRT");
   const [token0Count, setToken0Count] = useState(0);
+
+  const [token0Allowance, setToken0Allowance] = useState(0);
+
   const [token1Address, setToken1Address] = useState(TOKEN1);
   const [token1Name, setToken1Name] = useState("T1");
   const [token1Count, setToken1Count] = useState(0);
+
   const [tokenAmount, setTokenAmount] = useState(0);
+
   const [reviewTokenAmount, setReviewTokenAmount] = useState(0);
+
   const [swapCalculateAmount, setSwapCalculateAmount] = useState(0);
 
   const [isAirdrop, setIsAirdrop] = useState(true);
@@ -118,22 +129,23 @@ export default function SwapComponent() {
   const { contract: ammcontract } = useContract(ammAddress);
 
   const {
+    data: allowance,
+    isLoading: isAllowanceLoadong,
+    error: allowanceError
+  } = useContractRead(tokencontract, 'allowance', [walletAddress, ammAddress]);
+
+  useEffect(() => {
+    setToken0Allowance(0);
+    if (!isAllowanceLoadong) {
+      setToken0Allowance(parseFloat(parseInt(JSON.parse(JSON.stringify(allowance)).hex, 16) / decimal).toFixed(4));
+    }
+  }, [allowance])
+
+  const {
     data: swapCalculate,
     isLoading: isSwapCalculateLoadong,
     error: swapCalculateError
   } = useContractRead(ammcontract, 'swapCalculate', [token0Address, (tokenAmount * decimal).toString()]);
-
-  const {
-    data: reserve0,
-    isLoading: isReserve0Loadong,
-    error: reserve0Error
-  } = useContractRead(ammcontract, 'reserve0');
-
-  const {
-    data: reserve1,
-    isLoading: isReserve1Loadong,
-    error: reserve1Error
-  } = useContractRead(ammcontract, 'reserve1');
 
   useEffect(() => {
     setSwapCalculateAmount(0);
@@ -142,12 +154,24 @@ export default function SwapComponent() {
     }
   }, [swapCalculate])
 
+  const {
+    data: reserve0,
+    isLoading: isReserve0Loadong,
+    error: reserve0Error
+  } = useContractRead(ammcontract, 'reserve0');
+
   useEffect(() => {
     setToken0Count(0);
     if (!isReserve0Loadong) {
       setToken0Count(parseFloat(parseInt(JSON.parse(JSON.stringify(reserve0)).hex, 16) / decimal).toFixed(4));
     }
   }, [reserve0])
+
+  const {
+    data: reserve1,
+    isLoading: isReserve1Loadong,
+    error: reserve1Error
+  } = useContractRead(ammcontract, 'reserve1');
 
   useEffect(() => {
     setToken1Count(0);
@@ -269,75 +293,90 @@ export default function SwapComponent() {
               <Td style={{ padding: '10px', textAlign: 'left' }}>
                 <b><text style={{ color: '#7dd3fc' }}>Send Token : </text></b><text>{token0Name}</text>
                 <br></br>
-                <b>reserve : {token0Count}</b>
+                <text style={{fontSize: '14px'}}>reserve : <text style={{color: 'chartreuse'}}>{token0Count}</text></text>
               </Td>
               <Td style={{ padding: '10px', textAlign: 'left' }}>
                 <text>Send Amount : </text><input style={{ height: '35px' }} type="number" value={tokenAmount} onChange={tokenAmountReview}></input>
+                <br />
+                {
+                  tokenAmount <= 0 ? <text style={{ color: 'red', fontSize: '10px' }}><b>{token0Name} Amount must be greater than 0</b></text> : ""
+                }
               </Td>
             </Tr>
             <Tr>
               <Td style={{ padding: '10px', textAlign: 'left' }}>
                 <b><text style={{ color: '#7dd3fc' }}>Get Token : </text></b><text>{token1Name}</text>
                 <br></br>
-                <b>reserve : {token1Count}</b>
+                <text style={{fontSize: '14px'}}>reserve : <text style={{color: 'chartreuse'}}>{token1Count}</text></text>
               </Td>
               <Td style={{ padding: '10px', textAlign: 'left' }}>
                 <text>Get Amount (Estimate) : </text><text>{isAirdrop ? reviewTokenAmount : swapCalculateAmount}</text>
               </Td>
             </Tr>
             <Tr>
-              <Td style={{ padding: '10px' }}>
+              <Td>
                 {
                   isAirdrop
-                    ? <button style={btnStyledisabled} disabled><b>Change Token</b></button>
-                    : <button style={btnStyle} onClick={() => changeToken()}><b>Change Token</b></button>
+                    ? ""
+                    : <button style={btnStyle} onClick={() => changeToken()} className="tw-web3button css-1qr8xlu">Change Token</button>
                 }
+                {
+                  tokenAmount > 0 ?
+                    <Web3Button
+                      style={btnStyle}
+                      contractAddress={token0Address} // Your smart contract address
+                      action={async (contract) => {
+                        await contract.call("approve", [ammAddress, (tokenAmount * decimal).toString()]);
+                      }}
+                      onSuccess={() => {
+                        MySwal.fire({
+                          title: `Approve ${token0Name} Success！`,
+                          icon: 'success'
+                        })
+                      }}
+                      onError={() => {
+                        MySwal.fire({
+                          title: `Approve ${token0Name} Fail！`,
+                          icon: 'error'
+                        })
+                      }}
+                    >
+                      Approve {token0Name}
+                    </Web3Button>
+                    :
+                    <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Approve {token0Name}</button>
+                }
+                <br />
+                <text>Allowance : <text style={{ color: 'chartreuse' }}>{token0Allowance}</text></text>
               </Td>
-              <Td>
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={token0Address} // Your smart contract address
-                  action={async (contract) => {
-                    await contract.call("approve", [ammAddress, (tokenAmount * decimal).toString()]);
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: `Approve ${token0Name} Success！`,
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: `Approve ${token0Name} Fail！`,
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Approve {token0Name}
-                </Web3Button>
-
-                <Web3Button
-                  style={btnStyle}
-                  contractAddress={ammAddress} // Your smart contract address
-                  action={async (contract) => {
-                    const fnName = isAirdrop ? 'airdropswap' : 'swap';
-                    await contract.call(fnName, [token0Address, (tokenAmount * decimal).toString()]);
-                  }}
-                  onSuccess={() => {
-                    MySwal.fire({
-                      title: `Swap ${token1Name} Success！`,
-                      icon: 'success'
-                    })
-                  }}
-                  onError={() => {
-                    MySwal.fire({
-                      title: `Swap ${token1Name} Fail！`,
-                      icon: 'error'
-                    })
-                  }}
-                >
-                  Swap Confirm
-                </Web3Button>
+              <Td style={{ display: 'inline' }}>
+                {
+                  (Number(token0Allowance) >= Number(tokenAmount) && tokenAmount > 0) ?
+                    <Web3Button
+                      style={btnStyle}
+                      contractAddress={ammAddress} // Your smart contract address
+                      action={async (contract) => {
+                        const fnName = isAirdrop ? 'airdropswap' : 'swap';
+                        await contract.call(fnName, [token0Address, (tokenAmount * decimal).toString()]);
+                      }}
+                      onSuccess={() => {
+                        MySwal.fire({
+                          title: `Swap ${token1Name} Success！`,
+                          icon: 'success'
+                        })
+                      }}
+                      onError={() => {
+                        MySwal.fire({
+                          title: `Swap ${token1Name} Fail！`,
+                          icon: 'error'
+                        })
+                      }}
+                    >
+                      Swap Confirm
+                    </Web3Button>
+                    :
+                    <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Swap Confirm</button>
+                }
               </Td>
             </Tr>
           </Tbody>

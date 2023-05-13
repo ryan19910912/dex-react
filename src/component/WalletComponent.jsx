@@ -5,6 +5,7 @@ import {
   useContract,
   useContractRead,
   useBalance,
+  useActiveChain
 } from "@thirdweb-dev/react";
 
 import { useState, useEffect } from 'react';
@@ -12,6 +13,8 @@ import { useState, useEffect } from 'react';
 import axios from "axios";
 
 import { NATIVE_TOKEN_ADDRESS } from "@thirdweb-dev/sdk";
+
+import { TOKEN1, TOKEN2, TOKEN3, REWARD_TOKEN, AIRDROP_TOKEN } from '../const/contractAddress';
 
 import {
   Table,
@@ -59,7 +62,6 @@ export default function WalletComponent() {
   const ThStyle = {
     fontSize: '24px',
     color: 'gold',
-    cursor: 'pointer',
   }
 
   const pointStyle = {
@@ -126,6 +128,10 @@ export default function WalletComponent() {
       'apikey': ETHERSCAN_API_KEY
     }
 
+    const chain = useActiveChain();
+
+    console.log("chain = "+chain);
+
     const res = axios.get('https://api-sepolia.etherscan.io/api', { params: paramsObj });
 
     res.then((response) => {
@@ -152,8 +158,6 @@ export default function WalletComponent() {
   useEffect(() => {
     getTransaction();
   })
-
-  // getTransaction();
 
   return (
     <div className="wallet" style={walletStyle}>
@@ -199,7 +203,7 @@ export default function WalletComponent() {
                           <Td style={{ width: '50%', padding: '10px' }}>
                             <a href={'https://sepolia.etherscan.io/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
                           </Td>
-                          <Td style={{ color: 'aquamarine', padding: '10px' }}>{'$' + obj?.value}</Td>
+                          <Td style={{ color: 'aquamarine', padding: '10px' }}>{obj?.value}</Td>
                         </Tr>
                       )
                     })
@@ -268,7 +272,6 @@ export default function WalletComponent() {
               </Tbody>
             </Table>
           </TableContainer>
-
       }
     </div>
   );

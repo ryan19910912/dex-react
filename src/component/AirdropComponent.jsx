@@ -47,6 +47,20 @@ export default function AirdropComponent() {
     color: 'gold',
   }
 
+  const btnStyledisabled = {
+    minWidth: '150px',
+    minHeight: '43px',
+    margin: '2vh',
+    background: 'gray',
+    color: 'black',
+    padding: '12px',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '500',
+    boxSizing: 'border-box',
+    lineHeight: 1,
+  }
+
   const address = useAddress();
 
   const MySwal = withReactContent(Swal);
@@ -100,7 +114,7 @@ export default function AirdropComponent() {
         <Table variant='simple' align="center" style={AddressTableStyle}>
           <Thead>
             <Tr>
-              <Th colSpan={2} style={AddressThStyle}>AirDrop Rule <hr/> </Th>
+              <Th colSpan={2} style={AddressThStyle}>AirDrop Rule <hr /> </Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -132,33 +146,38 @@ export default function AirdropComponent() {
         </Table>
       </TableContainer>
 
-      <Web3Button
-        style={{ margin: "5vh" }}
-        contractAddress={AIRDROP_ADDRESS} // Your smart contract address
-        action={async (contract) => {
-          await contract.call("getAirdrop");
-        }}
-        onSuccess={() => {
-          MySwal.fire({
-            title: 'Get AirDrop Token Success！',
-            icon: 'success'
-          })
-        }}
-        onError={() => {
-          MySwal.fire({
-            title: 'Get AirDrop Token Fail！',
-            icon: 'error'
-          })
-        }}
-      >
-        Get AirDrop Token
-      </Web3Button>
+      {
+        (airdropTotalAmount && airdropRecord && Number(parseInt(JSON.parse(JSON.stringify(airdropRecord)).hex, 16) / decimal) < Number(parseInt(JSON.parse(JSON.stringify(airdropTotalAmount)).hex, 16) / decimal)) ?
+          <Web3Button
+            style={{ margin: "5vh" }}
+            contractAddress={AIRDROP_ADDRESS} // Your smart contract address
+            action={async (contract) => {
+              await contract.call("getAirdrop");
+            }}
+            onSuccess={() => {
+              MySwal.fire({
+                title: 'Get AirDrop Token Success！',
+                icon: 'success'
+              })
+            }}
+            onError={() => {
+              MySwal.fire({
+                title: 'Get AirDrop Token Fail！',
+                icon: 'error'
+              })
+            }}
+          >
+            Get AirDrop Token
+          </Web3Button>
+          :
+          <button style={btnStyledisabled} className="tw-web3button css-1qr8xlu" disabled>Get AirDrop Token</button>
+      }
 
       <TableContainer>
         <Table variant='simple' align="center" style={BalanceTableStyle}>
           <Thead>
             <Tr>
-              <Th colSpan={2} style={AddressThStyle}>Your AirDrop History <hr/> </Th>
+              <Th colSpan={2} style={AddressThStyle}>Your AirDrop History <hr /> </Th>
             </Tr>
           </Thead>
           <Tbody>
