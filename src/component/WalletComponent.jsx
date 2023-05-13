@@ -169,6 +169,8 @@ export default function WalletComponent() {
           transactionArray.push(transObj);
         });
         setTransactionArr(transactionArray);
+      }else if(responseData.status === '0' && responseData.message === 'No transactions found') {
+        setTransactionArr(transactionArray);
       }
     })
 
