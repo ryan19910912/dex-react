@@ -36,6 +36,8 @@ import { PaginationControl } from 'react-bootstrap-pagination-control';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+import '../const/pagination.css';
+
 export default function WalletComponent() {
 
   const MySwal = withReactContent(Swal);
