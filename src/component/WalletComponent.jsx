@@ -32,6 +32,10 @@ import {
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
+import { PaginationControl } from 'react-bootstrap-pagination-control';
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 export default function WalletComponent() {
 
   const MySwal = withReactContent(Swal);
@@ -115,6 +119,14 @@ export default function WalletComponent() {
     lineHeight: 1,
   }
 
+  const displayNone = {
+    display: 'none'
+  }
+
+  const displayRevert = {
+    display: 'revert'
+  }
+
   function timestampChange(timestamp) {
     if (timestamp == 0) {
       return "N/A";
@@ -154,6 +166,10 @@ export default function WalletComponent() {
   })
 
   const [transactionArr, setTransactionArr] = useState([]);
+  const [selectPage, setSelectPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showCount, setShowCount] = useState(10);
 
   const getTransaction = () => {
 
@@ -165,8 +181,8 @@ export default function WalletComponent() {
       'startblock': 0,
       'endblock': 'latest',
       'address': address,
-      'page': 1,
-      'offset': 10,
+      // 'page': 1,
+      // 'offset': 10,
       'sort': 'desc',
       'apikey': ETHERSCAN_API_KEY
     }
@@ -176,7 +192,12 @@ export default function WalletComponent() {
     res.then((response) => {
       const responseData = response.data;
       let transactionArray = [];
+
       if (responseData.status === '1') {
+        let pageNum = 1;
+        let resultCount = 1;
+        setTotalCount(responseData.result.length);
+
         responseData.result.forEach((vo) => {
           let transObj = new Object();
           transObj.blockNumber = vo.blockNumber;
@@ -185,9 +206,17 @@ export default function WalletComponent() {
           transObj.gas = vo.gas;
           transObj.from = vo.from;
           transObj.to = vo.to;
+          transObj.page = pageNum;
 
           transactionArray.push(transObj);
+
+          if ((resultCount == totalCount) || (resultCount != 1 && (resultCount % showCount == 0))){
+            pageNum += 1;
+          }
+          resultCount += 1;
+          
         });
+        setTotalPage(pageNum);
         setTransactionArr(transactionArray);
       } else if (responseData.status === '0' && responseData.message === 'No transactions found') {
         setTransactionArr(transactionArray);
@@ -199,6 +228,19 @@ export default function WalletComponent() {
   useEffect(() => {
     getTransaction();
   })
+
+  useEffect(() => {
+    const pageClass = document.getElementsByClassName("pageClass");
+    for (let i = 0; i < pageClass.length; i++) {
+      pageClass[i].style.display = "none";
+    }
+
+    const numPage = document.getElementsByClassName(selectPage+"_page");
+    for (let i = 0; i < numPage.length; i++) {
+      numPage[i].style.display = "revert";
+    }
+
+  }, [selectPage])
 
   const tokenArr = [
     {
@@ -314,7 +356,7 @@ export default function WalletComponent() {
             <Table variant='simple' align="center" style={BalanceTableStyle}>
               <Thead>
                 <Tr>
-                  <Th colSpan={6} style={ThStyle} >Transcation History ( Top 10 )<br /><br /> <hr /> </Th>
+                  <Th colSpan={6} style={ThStyle} >Transcation History ( {totalCount} )<br /><br /> <hr /> </Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -347,7 +389,7 @@ export default function WalletComponent() {
                     :
                     transactionArr.map((obj) => {
                       return (
-                        <Tr>
+                        <Tr className={obj?.page+"_page pageClass"} style={Number(obj?.page) == 1 ? displayRevert : displayNone}>
                           <Td>
                             <a href={chainUrl + '/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
                           </Td>
@@ -370,6 +412,20 @@ export default function WalletComponent() {
                       )
                     })
                 }
+                <Tr>
+                  <Td colSpan={6} style={{paddingTop: '20px'}}>
+                    <PaginationControl
+                      page={selectPage}
+                      between={4}
+                      total={totalCount}
+                      limit={showCount}
+                      changePage={(page) => {
+                        setSelectPage(page);
+                      }}
+                      ellipsis={1}
+                    />
+                  </Td>
+                </Tr>
               </Tbody>
             </Table>
           </TableContainer>
