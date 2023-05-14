@@ -29,7 +29,12 @@ import {
   TableContainer,
 } from '@chakra-ui/react';
 
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
 export default function WalletComponent() {
+
+  const MySwal = withReactContent(Swal);
 
   const chain = useActiveChain();
 
@@ -37,16 +42,16 @@ export default function WalletComponent() {
   const [chainUrl, setChainUrl] = useState('https://sepolia.etherscan.io');
 
   useEffect(() => {
-    if (chain){
+    if (chain) {
       const chainName = chain.name;
       console.log(chainName);
-      if (chainName == 'Sepolia'){
+      if (chainName == 'Sepolia') {
         setApiurl('https://api-sepolia.etherscan.io/api');
         setChainUrl('https://sepolia.etherscan.io');
-      } else if (chainName == 'Ethereum Mainnet'){
+      } else if (chainName == 'Ethereum Mainnet') {
         setApiurl('https://api.etherscan.io/api');
         setChainUrl('https://etherscan.io');
-      } else if (chainName == 'Goerli'){
+      } else if (chainName == 'Goerli') {
         setApiurl('https://api-goerli.etherscan.io/api');
         setChainUrl('https://goerli.etherscan.io');
       }
@@ -93,6 +98,21 @@ export default function WalletComponent() {
     whiteSpace: 'nowrap',
     width: '10vw',
     display: 'inline-block',
+  }
+
+  const btnStyle = {
+    minWidth: '150px',
+    minHeight: '43px',
+    margin: '2vh',
+    background: 'rgb(237, 237, 239)',
+    color: 'black',
+    padding: '12px',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '500',
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+    lineHeight: 1,
   }
 
   function timestampChange(timestamp) {
@@ -169,7 +189,7 @@ export default function WalletComponent() {
           transactionArray.push(transObj);
         });
         setTransactionArr(transactionArray);
-      }else if(responseData.status === '0' && responseData.message === 'No transactions found') {
+      } else if (responseData.status === '0' && responseData.message === 'No transactions found') {
         setTransactionArr(transactionArray);
       }
     })
@@ -179,6 +199,64 @@ export default function WalletComponent() {
   useEffect(() => {
     getTransaction();
   })
+
+  const tokenArr = [
+    {
+      'address': TOKEN1,
+      'symbol': 'T1',
+      'decimals': 18
+    },
+    {
+      'address': TOKEN2,
+      'symbol': 'T2',
+      'decimals': 18
+    },
+    {
+      'address': TOKEN3,
+      'symbol': 'T3',
+      'decimals': 18
+    },
+    {
+      'address': AIRDROP_TOKEN,
+      'symbol': 'AIRT',
+      'decimals': 18
+    },
+    {
+      'address': REWARD_TOKEN,
+      'symbol': 'RWT',
+      'decimals': 18
+    }
+  ];
+
+  function importTokens(count) {
+    console.log(count);
+    if (count == tokenArr.length) {
+      MySwal.fire({
+        title: `Import Token Success！`,
+        icon: 'success'
+      })
+    }
+    window.ethereum.request({
+      method: 'wallet_watchAsset', params: {
+        type: 'ERC20',
+        options: {
+          address: tokenArr[count].address,
+          symbol: tokenArr[count].symbol,
+          decimals: tokenArr[count].decimals
+        }
+      }
+    }).then(() => {
+      setTimeout(() => {
+        count += 1;
+        importTokens(count);
+      }, 100);
+    }).catch(() => {
+      MySwal.fire({
+        title: `Import ${tokenArr[count].symbol} Token Fail！`,
+        icon: 'error'
+      })
+    })
+  }
 
   return (
     <div className="wallet" style={walletStyle}>
@@ -190,14 +268,16 @@ export default function WalletComponent() {
             theme='dark'>
           </ConnectWallet>
           :
-          <TableContainer>
+          <TableContainer style={{ display: 'inline-flex' }}>
             <Table variant='simple' align="center" style={AddressTableStyle}>
               <Thead>
                 <Tr>
                   <Th colSpan={2} style={ThStyle} >
                     Address
                     <br />
-                    <a style={{ fontSize: '16px' }} href={chainUrl+'/address/' + address} target="_blank">{address}</a>
+                    <a style={{ fontSize: '16px' }} href={chainUrl + '/address/' + address} target="_blank">{address}</a>
+                    <br />
+                    <button style={btnStyle} onClick={() => importTokens(0)} className="tw-web3button css-1qr8xlu">Import Tokens</button>
                     <hr />
                   </Th>
                 </Tr>
@@ -222,7 +302,7 @@ export default function WalletComponent() {
                       return (
                         <Tr>
                           <Td style={{ width: '50%', padding: '10px' }}>
-                            <a href={chainUrl+'/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
+                            <a href={chainUrl + '/token/' + obj?.address} target="_blank">{obj?.name} ( {obj?.symbol} )</a>
                           </Td>
                           <Td style={{ color: 'aquamarine', padding: '10px' }}>{obj?.value}</Td>
                         </Tr>
@@ -250,7 +330,7 @@ export default function WalletComponent() {
                     <text>Function Name</text>
                   </Td>
                   <Td>
-                    <text>Gas</text>
+                    <text>Gas Fee</text>
                   </Td>
                   <Td>
                     <text>From</text>
@@ -269,7 +349,7 @@ export default function WalletComponent() {
                       return (
                         <Tr>
                           <Td>
-                            <a href={chainUrl+'/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
+                            <a href={chainUrl + '/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
                           </Td>
                           <Td style={{ color: 'yellow' }}>
                             {obj?.date}
@@ -281,10 +361,10 @@ export default function WalletComponent() {
                             {obj?.gas}
                           </Td>
                           <Td>
-                            <a style={pointStyle} href={chainUrl+'/address/' + obj?.from} target="_blank">{obj?.from}</a>
+                            <a style={pointStyle} href={chainUrl + '/address/' + obj?.from} target="_blank">{obj?.from}</a>
                           </Td>
                           <Td>
-                            <a style={pointStyle} href={chainUrl+'/address/' + obj?.to} target="_blank">{obj?.to}</a>
+                            <a style={pointStyle} href={chainUrl + '/address/' + obj?.to} target="_blank">{obj?.to}</a>
                           </Td>
                         </Tr>
                       )
