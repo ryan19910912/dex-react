@@ -85,7 +85,7 @@ export default function WalletComponent() {
     borderRadius: '18px',
     width: '60vw',
     margin: '15px',
-    display: 'inline-table',
+    display: 'revert',
   }
 
   const AddressThStyle = {
@@ -312,7 +312,7 @@ export default function WalletComponent() {
             theme='dark'>
           </ConnectWallet>
           :
-          <TableContainer style={{ display: 'inline-flex' }}>
+          <TableContainer style={{ display: '-webkit-box' }}>
             <Table variant='simple' align="center" style={AddressTableStyle}>
               <Thead>
                 <Tr>
