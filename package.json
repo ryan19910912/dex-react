@@ -19,6 +19,7 @@
     "bootstrap": "^5.2.3",
     "dotenv": "^16.0.3",
     "dotenv-expand": "^10.0.0",
+    "echarts": "^5.4.2",
     "ethers": "^5.7.2",
     "framer-motion": "^10.12.4",
     "localforage": "^1.10.0",

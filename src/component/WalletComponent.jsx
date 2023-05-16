@@ -9,7 +9,7 @@ import {
   useActiveChain
 } from "@thirdweb-dev/react";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import axios from "axios";
 
@@ -38,7 +38,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import '../const/pagination.css';
 
+import * as echarts from 'echarts';
+import { Tab } from "bootstrap";
+
 export default function WalletComponent() {
+
+  const decimal = 1000000000000000000;
 
   const MySwal = withReactContent(Swal);
 
@@ -60,6 +65,9 @@ export default function WalletComponent() {
       } else if (chainName == 'Goerli') {
         setApiurl('https://api-goerli.etherscan.io/api');
         setChainUrl('https://goerli.etherscan.io');
+      // } else if (chainName == 'Chiado') {
+      //   setApiurl('https://gnosis-chiado.blastapi.io/');
+      //   setChainUrl('https://gnosisscan.io');
       }
     }
   }, [chain])
@@ -121,6 +129,20 @@ export default function WalletComponent() {
     lineHeight: 1,
   }
 
+  const btnStyledisabled = {
+    minWidth: '150px',
+    minHeight: '43px',
+    margin: '2vh',
+    background: 'gray',
+    color: 'black',
+    padding: '12px',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '500',
+    boxSizing: 'border-box',
+    lineHeight: 1,
+  }
+
   const displayNone = {
     display: 'none'
   }
@@ -134,8 +156,8 @@ export default function WalletComponent() {
       return "N/A";
     }
     var date = new Date(timestamp);
-    var Y = date.getFullYear() + '-';
-    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+    var Y = date.getFullYear() + '/';
+    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '/';
     var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
     var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
     var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':';
@@ -172,6 +194,27 @@ export default function WalletComponent() {
   const [totalPage, setTotalPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [showCount, setShowCount] = useState(10);
+
+  const [product, setProduct] = useState([]);
+  const [functionNameMap, setFunctionNameMap] = useState(new Map());
+
+  const nowDate = new Date();
+
+  const productArr = [];
+
+  useEffect(() => {
+    productArr.push('product');
+
+    for (let i = 5; i >= 0; i--) {
+      let year = (nowDate.getMonth() + 1 - i) < 1 ? nowDate.getFullYear() - 1 : nowDate.getFullYear();
+      let month = (nowDate.getMonth() + 1 - i) < 1 ? (nowDate.getMonth() + 1 - i + 12) : (nowDate.getMonth() + 1 - i);
+      month = month < 10 ? "0" + month : month;
+      let str = year + '/' + month;
+      productArr.push(str);
+    }
+
+    setProduct(productArr);
+  })
 
   const getTransaction = () => {
 
@@ -212,11 +255,40 @@ export default function WalletComponent() {
 
           transactionArray.push(transObj);
 
-          if ((resultCount == totalCount) || (resultCount != 1 && (resultCount % showCount == 0))){
+          if (transObj.functionName !== '') {
+            let arr = functionNameMap.get(transObj.functionName);
+            if (arr == null) {
+              arr = [];
+              arr.length = 7;
+              arr[0] = transObj.functionName;
+              arr[1] = 0;
+              arr[2] = 0;
+              arr[3] = 0;
+              arr[4] = 0;
+              arr[5] = 0;
+              arr[6] = 0;
+            }
+            if (transObj.date.indexOf(product[1]) != -1) {
+              arr[1] = Number(arr[1]) + Number(transObj.gas);
+            } else if (transObj.date.indexOf(product[2]) != -1) {
+              arr[2] = Number(arr[2]) + Number(transObj.gas);
+            } else if (transObj.date.indexOf(product[3]) != -1) {
+              arr[3] = Number(arr[3]) + Number(transObj.gas);
+            } else if (transObj.date.indexOf(product[4]) != -1) {
+              arr[4] = Number(arr[4]) + Number(transObj.gas);
+            } else if (transObj.date.indexOf(product[5]) != -1) {
+              arr[5] = Number(arr[5]) + Number(transObj.gas);
+            } else if (transObj.date.indexOf(product[6]) != -1) {
+              arr[6] = Number(arr[6]) + Number(transObj.gas);
+            }
+            functionNameMap.set(transObj.functionName, arr);
+          }
+
+          if ((resultCount == totalCount) || (resultCount != 1 && (resultCount % showCount == 0))) {
             pageNum += 1;
           }
           resultCount += 1;
-          
+
         });
         setTotalPage(pageNum);
         setTransactionArr(transactionArray);
@@ -237,13 +309,15 @@ export default function WalletComponent() {
       pageClass[i].style.display = "none";
     }
 
-    const numPage = document.getElementsByClassName(selectPage+"_page");
+    const numPage = document.getElementsByClassName(selectPage + "_page");
     for (let i = 0; i < numPage.length; i++) {
       numPage[i].style.display = "revert";
     }
 
   }, [selectPage])
 
+
+  // import token
   const tokenArr = [
     {
       'address': TOKEN1,
@@ -302,6 +376,106 @@ export default function WalletComponent() {
     })
   }
 
+  const gasFeeChart = useRef(null);
+  let chartElement;
+  let myChart;
+  let option;
+
+  const [showDraw, setShowDraw] = useState(false);
+
+  const drawCharts = () => {
+    document.getElementById("gasFeeChartid").style.height = '1000px';
+    setShowDraw(true);
+    let sourceArray = [];
+    let seriesArray = [];
+    sourceArray.push(productArr);
+    functionNameMap.forEach((arr) => {
+      sourceArray.push(arr);
+      let emphasis = new Object();
+      emphasis.focus = 'series';
+
+      let obj = new Object();
+      obj.type = 'line';
+      obj.smooth = true;
+      obj.seriesLayoutBy = 'row';
+      obj.emphasis = emphasis;
+
+      seriesArray.push(obj);
+    })
+
+    let emphasis = new Object();
+    emphasis.focus = 'self';
+    let label = new Object();
+    label.formatter = `{b}: {@${product[1]}} ({d}%)`;
+    let encodeObj = new Object();
+    encodeObj.itemName = 'product';
+    encodeObj.value = `${product[1]}`;
+    encodeObj.tooltip = `${product[1]}`;
+    let obj = new Object();
+    obj.type = 'pie';
+    obj.id = 'pid';
+    obj.radius = '30%';
+    let center = [];
+    center.push('50%');
+    center.push('30%');
+    obj.center = center;
+    obj.emphasis = emphasis;
+    obj.label = label;
+    obj.encode = encodeObj;
+
+    seriesArray.push(obj);
+
+    // GasFeeChart
+    chartElement = gasFeeChart.current;
+    myChart = echarts.init(chartElement, 'dark');
+    setTimeout(function () {
+      option = {
+        legend: {},
+        tooltip: {
+          trigger: 'axis',
+          showContent: false
+        },
+        dataset: {
+          source: sourceArray
+        },
+        xAxis: { type: 'category' },
+        yAxis: { gridIndex: 0 },
+        grid: { top: '55%' },
+        series: seriesArray
+      };
+      myChart.on('updateAxisPointer', function (event) {
+        const xAxisInfo = event.axesInfo[0];
+        console.log("xAxisInfo = " + xAxisInfo);
+        if (xAxisInfo) {
+          const dimension = xAxisInfo.value + 1;
+          myChart.setOption({
+            series: {
+              id: 'pie',
+              label: {
+                formatter: '{b}: {@[' + dimension + ']} ({d}%)'
+              },
+              encode: {
+                value: dimension,
+                tooltip: dimension
+              }
+            }
+          });
+        }
+      });
+      myChart.setOption(option);
+    });
+
+    option && myChart.setOption(option);
+  }
+
+  const disabledDraw = () => {
+    document.getElementById("gasFeeChartid").style.height = 'auto';
+    setShowDraw(false);
+    let element = document.getElementById("gasFeeChartid");
+    element.innerHTML = "";
+    element.removeAttribute("_echarts_instance_");
+  }
+
   return (
     <div className="wallet" style={walletStyle}>
       <h1>Wallet Detail</h1>
@@ -319,8 +493,10 @@ export default function WalletComponent() {
                   <Th colSpan={2} style={ThStyle} >
                     Address
                     <br />
+                    <br />
                     <a style={{ fontSize: '16px' }} href={chainUrl + '/address/' + address} target="_blank">{address}</a>
                     <br />
+                    <text style={{ fontSize: '14px', color: 'deeppink' }}>Chain Name : {chain.name}</text>
                     <button style={btnStyle} onClick={() => importTokens(0)} className="tw-web3button css-1qr8xlu">Import Tokens</button>
                     <hr />
                   </Th>
@@ -391,7 +567,7 @@ export default function WalletComponent() {
                     :
                     transactionArr.map((obj) => {
                       return (
-                        <Tr className={obj?.page+"_page pageClass"} style={Number(obj?.page) == 1 ? displayRevert : displayNone}>
+                        <Tr className={obj?.page + "_page pageClass"} style={Number(obj?.page) == 1 ? displayRevert : displayNone}>
                           <Td>
                             <a href={chainUrl + '/block/' + obj?.blockNumber} target="_blank">{obj?.blockNumber}</a>
                           </Td>
@@ -415,7 +591,7 @@ export default function WalletComponent() {
                     })
                 }
                 <Tr>
-                  <Td colSpan={6} style={{paddingTop: '20px'}}>
+                  <Td colSpan={6} style={{ paddingTop: '20px' }}>
                     <PaginationControl
                       page={selectPage}
                       between={4}
@@ -432,6 +608,13 @@ export default function WalletComponent() {
             </Table>
           </TableContainer>
       }
-    </div>
+      <div style={{ textAlign: 'center' }}>
+        <div>
+          <button style={transactionArr.length == 0 ? btnStyledisabled : btnStyle} onClick={showDraw ? disabledDraw : drawCharts}>{showDraw ? 'Hidden GasFeeChart' : 'Show GasFeeChart'}</button>
+          <p style={showDraw ? ThStyle : displayNone}>Total Gas Fee By Function Name For Latest 6 Months</p>
+        </div>
+        <div id="gasFeeChartid" ref={gasFeeChart} style={{ height: 'auto', width: '80%', display: 'inline-block' }}></div>
+      </div>
+    </div >
   );
 }
