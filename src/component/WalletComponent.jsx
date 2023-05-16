@@ -65,9 +65,6 @@ export default function WalletComponent() {
       } else if (chainName == 'Goerli') {
         setApiurl('https://api-goerli.etherscan.io/api');
         setChainUrl('https://goerli.etherscan.io');
-      // } else if (chainName == 'Chiado') {
-      //   setApiurl('https://gnosis-chiado.blastapi.io/');
-      //   setChainUrl('https://gnosisscan.io');
       }
     }
   }, [chain])
@@ -413,7 +410,7 @@ export default function WalletComponent() {
     encodeObj.tooltip = `${product[1]}`;
     let obj = new Object();
     obj.type = 'pie';
-    obj.id = 'pid';
+    obj.id = 'pie';
     obj.radius = '30%';
     let center = [];
     center.push('50%');
